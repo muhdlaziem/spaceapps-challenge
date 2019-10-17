@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 original_data = pd.read_csv("meteorite-landings.csv",
                             index_col=0)  # We first put the data into a dataframe called original data
@@ -52,7 +54,7 @@ print(omit_data.isna().sum())
     before that, check for any correlation. It can be either pearson, kendall or even spearman
 
     This is how to select specific column
-    spec_col= omit_data.iloc[:,[3,5]] # selecting column 3 and 5. Note that it started from 0 
+    spec_col= omit_data.iloc[:,[5]] # selecting column 5. Note that it started from 0 
 '''
 print(omit_data.corr(method='pearson'))
 plt.matshow(omit_data.corr(method='pearson'))
@@ -63,19 +65,44 @@ plt.show()  # simply wanted to show correlation matrix
 this part kinda don't make sense since the correlation is too low, and not correct
 therefore the regression line form is inaccurate
 
-x = complete_data.iloc[:,[5]].values.reshape(-1,1)
-y = complete_data.iloc[:,[3]].values.reshape(-1,1)
+'''
+x = complete_data.iloc[:, [5]].values.reshape(-1, 1)  # select column 5
+y = complete_data.iloc[:, [3]].values.reshape(-1, 1)  # select column 3
 imputation_model = LinearRegression()
-imputation_model.fit(x,y)
-
+imputation_model.fit(x, y)
 
 # spec_col.to_csv('Try.csv')  # Not needed, just for manual validation and check
 
 y_predict = imputation_model.predict(x)
+print("\n------Result of prediction------\n")
 print(y_predict)
+print("\n------Result of prediction------\n")
+plt.scatter(x, y)
+plt.plot(x, y_predict, color='red')
+plt.show()  # can omit this out if not needed
 
-plt.scatter(x,y)
-plt.plot(x, y_predict,color='red')
-plt.show()
+''' 
+    this part here is using mean imputations (a type of statistical imputations)
+    the library entered here is for RMSE calculations
+'''
+
+omit_data["mass"].fillna(omit_data.groupby("name")["mass"].transform("mean"), inplace=True)
+omit_data["mass"].fillna(omit_data["mass"].mean(), inplace=True)
+
+print(omit_data.isna().sum())
+
+result1 = omit_data
+result1.to_csv("Result1.csv")
+
+val_actual = complete_data.iloc[:, [3]].values.reshape(-1, 1)  # select column 5
+val_predict = omit_data.iloc[:, [3]].values.reshape(-1, 1)  # select column 5
 
 '''
+    This part is wrong due to lack of insight in comparison and calculating error
+'''
+rms = sqrt(mean_squared_error(val_actual, val_predict))
+
+print("\nThe value of RMSE : " + str(rms))
+
+
+
